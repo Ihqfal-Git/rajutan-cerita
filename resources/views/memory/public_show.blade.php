@@ -77,22 +77,15 @@
         <!-- MEMORY CARD -->
         <div class="memory-card">
             <div class="memory-media">
-                @if($memory->type === 'image' && $memory->file_path)
-                    <img src="{{ asset('storage/'.$memory->file_path) }}" alt="{{ $memory->title }}">
-                @elseif($memory->type === 'video' && $memory->file_path)
-                    <video controls><source src="{{ asset('storage/'.$memory->file_path) }}"></video>
-                @elseif($memory->type === 'music' && $memory->file_path)
-                    <div class="media-placeholder">🎵</div>
-                    <audio controls><source src="{{ asset('storage/'.$memory->file_path) }}"></audio>
-                @else
-                    <div class="media-placeholder">
-                        @switch($memory->type)
-                            @case('link') 🔗 @break
-                            @case('text') 📝 @break
-                            @default ✨
-                        @endswitch
-                    </div>
-                @endif
+                <div class="memory-media">
+                    @if($memory->memoryFiles->isNotEmpty())
+                        @foreach($memory->memoryFiles as $mf)
+                            @include('memory._file_player', ['mf' => $mf])
+                        @endforeach
+                    @else
+                        <div style="padding:3rem;text-align:center;font-size:4rem">✨</div>
+                    @endif
+                </div>
             </div>
 
             <div class="memory-body">

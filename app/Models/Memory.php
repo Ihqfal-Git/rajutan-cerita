@@ -26,10 +26,16 @@ class Memory extends Model
         'last_accessed_at' => 'datetime',
     ];
 
-    // Relasi ke user (pemilik kenangan)
+    // Pemilik
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // Multi file (kalau nanti support banyak media)
+    public function memoryFiles()
+    {
+        return $this->hasMany(MemoryFile::class)->orderBy('order');
     }
 
     // Request akses QR

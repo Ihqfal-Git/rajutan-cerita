@@ -19,7 +19,7 @@ class PublicMemoryController extends Controller
 
     public function show(string $slug)
     {
-        $memory = Memory::where('slug', $slug)->firstOrFail();
+        $memory = Memory::where('slug', $slug)->with('memoryFiles')->firstOrFail();
         $guestToken = $this->getOrCreateGuestToken();
 
         // Owner sendiri — langsung akses
