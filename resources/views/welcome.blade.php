@@ -298,14 +298,14 @@
         <div class="hero-badge">✨ Platform Kenangan Digitalmu</div>
         <h1 class="hero-title">Simpan Setiap<br>Momen Berharga</h1>
         <p class="hero-sub">
-            Rajutan Cerita adalah tempatmu menyimpan kenangan dalam berbagai bentuk —
+            Rajutan Cerita adalah tempatmu menyimpan kenangan dalam berbagai bentuk
             foto, video, musik, tautan, atau sekadar tulisan dari hati.
         </p>
         <div class="hero-cta">
             <a href="/register" class="btn btn-primary btn-large">Mulai Sekarang</a>
             <a href="/login" class="btn btn-ghost btn-large">Sudah punya akun</a>
         </div>
-        <p class="hero-note">Gratis selamanya · Privat · Hanya kamu yang bisa lihat</p>
+        <p class="hero-note">Gratis selamanya · Privat · Modern</p>
     </section>
 
     <!-- FEATURES -->
@@ -315,8 +315,8 @@
         <div class="features-grid">
             <div class="feature-card">
                 <span class="feature-icon">🔒</span>
-                <div class="feature-name">100% Privat</div>
-                <div class="feature-desc">Kenangan kamu tidak bisa dilihat siapapun. Hanya kamu yang punya akses.</div>
+                <div class="feature-name">Modern</div>
+                <div class="feature-desc">Desain yang terbaru dan menarik untuk pengalaman pengguna yang optimal.</div>
             </div>
             <div class="feature-card">
                 <span class="feature-icon">🎨</span>
@@ -361,7 +361,7 @@
     </section>
 
     <footer>
-        &copy; {{ date('Y') }} Rajutan Cerita — Dibuat dengan ❤️
+        &copy; {{ date('Y') }} Rajutan Cerita — Dibuat dengan hati
     </footer>
 
 </body>

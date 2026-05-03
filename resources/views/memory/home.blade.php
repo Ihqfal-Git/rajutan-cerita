@@ -10,14 +10,40 @@
     .notif-badge { position:relative; display:inline-flex; }
     .badge-dot { position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; border-radius:10px; padding:1px 5px; min-width:18px; text-align:center; }
 
-    .memories-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.2rem; }
+    .btn { padding:.5rem 1.2rem; border:none; border-radius:20px; cursor:pointer; font-size:.85rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:.4rem; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,#7c3aed,#db2777); color:white; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(124,58,237,.4); }
+    .btn-outline { background:transparent; color:#a78bfa; border:1px solid rgba(167,139,250,.4); }
+    .btn-outline:hover { background:rgba(167,139,250,.1); }
 
-    .memory-card { background:rgba(30,20,50,.8); border:1px solid rgba(150,100,200,.15); border-radius:16px; overflow:hidden; transition:all .3s; text-decoration:none; color:inherit; display:block; position:relative; animation:fadeInUp .4s ease both; }
+    /* GRID */
+    .memories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.2rem;
+        width: 100%;
+    }
+
+    /* CARD */
+    .memory-card {
+        background: rgba(30,20,50,.8);
+        border: 1px solid rgba(150,100,200,.15);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all .3s;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        animation: fadeInUp .4s ease both;
+        min-width: 0;
+    }
     .memory-card:hover { transform:translateY(-4px); border-color:rgba(192,132,252,.4); box-shadow:0 8px 32px rgba(124,58,237,.2); }
 
-    .card-thumb { width:100%; height:160px; object-fit:cover; display:block; }
-    .card-type-banner { height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; font-size:3rem; }
-    .card-type-label { font-size:.75rem; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }
+    .card-thumb { width:100%; height:150px; object-fit:cover; display:block; }
+    .card-type-banner { width:100%; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.4rem; font-size:2.5rem; flex-shrink:0; }
+    .card-type-label { font-size:.7rem; color:#9ca3af; text-transform:uppercase; letter-spacing:1px; }
 
     .type-image { background:linear-gradient(135deg,#1e1b4b,#312e81); }
     .type-video { background:linear-gradient(135deg,#1a1a2e,#16213e); }
@@ -25,16 +51,16 @@
     .type-link  { background:linear-gradient(135deg,#0a1628,#0f2d4a); }
     .type-text  { background:linear-gradient(135deg,#1a1a1a,#2d2d2d); }
 
-    .card-body { padding:1rem; }
-    .card-title { font-weight:600; font-size:1rem; color:#e8e0f0; margin-bottom:.4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .card-desc { font-size:.82rem; color:#6b7280; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.5; min-height:2.5em; }
+    .card-body { padding:.9rem; flex:1; }
+    .card-title { font-weight:600; font-size:.95rem; color:#e8e0f0; margin-bottom:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card-desc { font-size:.8rem; color:#6b7280; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.5; min-height:2.4em; }
 
-    .card-stats { display:flex; gap:1rem; padding:.5rem 1rem; font-size:.75rem; color:#4b5563; }
-    .card-stat { display:flex; align-items:center; gap:.3rem; }
+    .card-stats { display:flex; gap:.8rem; padding:.4rem .9rem; font-size:.72rem; color:#4b5563; flex-wrap:wrap; }
+    .card-stat { display:flex; align-items:center; gap:.25rem; }
 
-    .card-footer { padding:.6rem 1rem; border-top:1px solid rgba(150,100,200,.1); display:flex; justify-content:space-between; align-items:center; }
-    .card-date { font-size:.75rem; color:#4b5563; }
-    .card-badge { font-size:.7rem; padding:.2rem .6rem; border-radius:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+    .card-footer { padding:.5rem .9rem; border-top:1px solid rgba(150,100,200,.1); display:flex; justify-content:space-between; align-items:center; margin-top:auto; }
+    .card-date { font-size:.72rem; color:#4b5563; }
+    .card-badge { font-size:.65rem; padding:.2rem .55rem; border-radius:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
 
     .badge-image { background:rgba(99,102,241,.2); color:#818cf8; }
     .badge-video { background:rgba(239,68,68,.2); color:#f87171; }
@@ -42,18 +68,12 @@
     .badge-link  { background:rgba(59,130,246,.2); color:#93c5fd; }
     .badge-text  { background:rgba(156,163,175,.2); color:#d1d5db; }
 
-    .qr-indicator { position:absolute; top:.6rem; right:.6rem; background:rgba(124,58,237,.8); color:white; font-size:.65rem; font-weight:600; padding:.2rem .5rem; border-radius:6px; }
+    .qr-indicator { position:absolute; top:.5rem; right:.5rem; background:rgba(124,58,237,.85); color:white; font-size:.6rem; font-weight:700; padding:.2rem .5rem; border-radius:6px; }
 
     .empty-state { text-align:center; padding:5rem 2rem; }
     .empty-icon { font-size:4rem; margin-bottom:1rem; }
     .empty-title { font-size:1.3rem; color:#6b7280; margin-bottom:.5rem; }
     .empty-sub { color:#4b5563; font-size:.9rem; margin-bottom:2rem; }
-
-    .btn { padding:.5rem 1.2rem; border:none; border-radius:20px; cursor:pointer; font-size:.85rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:.4rem; transition:all .2s; }
-    .btn-primary { background:linear-gradient(135deg,#7c3aed,#db2777); color:white; }
-    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(124,58,237,.4); }
-    .btn-outline { background:transparent; color:#a78bfa; border:1px solid rgba(167,139,250,.4); }
-    .btn-outline:hover { background:rgba(167,139,250,.1); }
 
     @keyframes fadeInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 </style>
@@ -90,8 +110,13 @@
                 <span class="qr-indicator">QR ✓</span>
             @endif
 
-            @if($memory->type === 'image' && $memory->file_path)
-                <img src="{{ asset('storage/'.$memory->file_path) }}" alt="{{ $memory->title }}" class="card-thumb">
+            {{-- THUMBNAIL --}}
+            @php
+                $firstFile = $memory->memoryFiles->first();
+            @endphp
+
+            @if($firstFile && $firstFile->file_type === 'image')
+                <img src="{{ asset('storage/'.$firstFile->file_path) }}" class="card-thumb" alt="{{ $memory->title }}">
             @else
                 <div class="card-type-banner type-{{ $memory->type }}">
                     @switch($memory->type)

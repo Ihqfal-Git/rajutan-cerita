@@ -42,16 +42,16 @@ class MemoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'               => 'required|string|max:255',
-            'description'         => 'nullable|string',
-            'files'               => 'nullable|array|max:5',
-            'files.*'             => 'nullable|file|max:51200',
-            'captions'            => 'nullable|array',
-            'captions.*'          => 'nullable|string|max:200',
-            'links'               => 'nullable|array|max:5',
-            'links.*'             => 'nullable|url',
-            'link_captions'       => 'nullable|array',
-            'link_captions.*'     => 'nullable|string|max:200',
+            'title'           => 'required|string|max:255',
+            'description'     => 'nullable|string',
+            'files'           => 'nullable|array|max:5',
+            'files.*'         => 'nullable|file|max:10240',
+            'captions'        => 'nullable|array',
+            'captions.*'      => 'nullable|string|max:200',
+            'links'           => 'nullable|array|max:2',
+            'links.*'         => 'nullable|url|max:500',
+            'link_captions'   => 'nullable|array',
+            'link_captions.*' => 'nullable|string|max:200',
         ]);
 
         $slug = Str::slug($request->title) . '-' . Str::random(6);
@@ -59,11 +59,10 @@ class MemoryController extends Controller
             $slug = Str::slug($request->title) . '-' . Str::random(6);
         }
 
-        // Tentukan type utama dari file pertama
         $type = 'text';
         if ($request->hasFile('files')) {
-            $firstMime = $request->file('files')[0]->getMimeType();
-            $type = $this->mimeToType($firstMime);
+            $firstFile = collect($request->file('files'))->filter()->first();
+            if ($firstFile) $type = $this->mimeToType($firstFile->getMimeType());
         } elseif (!empty(array_filter($request->input('links', [])))) {
             $type = 'link';
         }
@@ -76,12 +75,16 @@ class MemoryController extends Controller
             'type'        => $type,
         ]);
 
-        $order = 0;
+        $fileOrder = 0;
+        $linkOrder = 100;
 
-        // Simpan file upload
+        // Simpan file (max 5)
+        $fileCount = 0;
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $i => $file) {
-                if (!$file) continue;
+                if (!$file || $fileCount >= 5) continue;
+                if ($file->getSize() > 10 * 1024 * 1024) continue;
+
                 $path     = $file->store('memory/' . auth()->id(), 'public');
                 $fileType = $this->mimeToType($file->getMimeType());
                 MemoryFile::create([
@@ -89,22 +92,25 @@ class MemoryController extends Controller
                     'file_path' => $path,
                     'file_type' => $fileType,
                     'caption'   => $request->input("captions.{$i}") ?: null,
-                    'order'     => $order++,
+                    'order'     => $fileOrder++,
                 ]);
+                $fileCount++;
             }
         }
 
-        // Simpan link
+        // Simpan link (max 2, terpisah)
+        $linkCount = 0;
         foreach ($request->input('links', []) as $i => $link) {
-            if (empty($link)) continue;
+            if (empty(trim($link)) || $linkCount >= 2) continue;
             $linkType = $this->detectLinkType($link);
             MemoryFile::create([
                 'memory_id' => $memory->id,
                 'file_path' => $link,
                 'file_type' => $linkType,
                 'caption'   => $request->input("link_captions.{$i}") ?: null,
-                'order'     => $order++,
+                'order'     => $linkOrder++,
             ]);
+            $linkCount++;
         }
 
         $this->generateQrCode($memory);
@@ -136,9 +142,19 @@ class MemoryController extends Controller
             ->with('memoryFiles')
             ->firstOrFail();
 
+        $remainingFiles = 5 - $memory->memoryFiles()
+            ->whereNotIn('file_type', ['youtube', 'spotify', 'link'])
+            ->count();
+
+        $remainingLinks = 2 - $memory->memoryFiles()
+            ->whereIn('file_type', ['youtube', 'spotify', 'link'])
+            ->count();
+
         return view('memory.edit', [
-            'memory'      => $memory,
-            'suggestions' => self::CAPTION_SUGGESTIONS,
+            'memory'         => $memory,
+            'suggestions'    => self::CAPTION_SUGGESTIONS,
+            'remainingFiles' => max(0, $remainingFiles),
+            'remainingLinks' => max(0, $remainingLinks),
         ]);
     }
 
@@ -153,11 +169,11 @@ class MemoryController extends Controller
             'title'           => 'required|string|max:255',
             'description'     => 'nullable|string',
             'files'           => 'nullable|array|max:5',
-            'files.*'         => 'nullable|file|max:51200',
+            'files.*'         => 'nullable|file|max:10240',
             'captions'        => 'nullable|array',
             'captions.*'      => 'nullable|string|max:200',
-            'links'           => 'nullable|array|max:5',
-            'links.*'         => 'nullable|url',
+            'links'           => 'nullable|array|max:2',
+            'links.*'         => 'nullable|url|max:500',
             'link_captions'   => 'nullable|array',
             'link_captions.*' => 'nullable|string|max:200',
             'delete_files'    => 'nullable|array',
@@ -169,7 +185,7 @@ class MemoryController extends Controller
             'description' => $request->description,
         ]);
 
-        // Hapus file yang dicentang untuk dihapus
+        // Hapus file yang dicentang
         if ($request->has('delete_files')) {
             foreach ($request->delete_files as $fileId) {
                 $mf = MemoryFile::where('id', $fileId)
@@ -184,13 +200,24 @@ class MemoryController extends Controller
             }
         }
 
-        $currentCount = $memory->memoryFiles()->count();
-        $order        = $memory->memoryFiles()->max('order') + 1;
+        // Hitung ulang setelah delete
+        $existingFileCount = $memory->memoryFiles()
+            ->whereNotIn('file_type', ['youtube', 'spotify', 'link'])
+            ->count();
+        $existingLinkCount = $memory->memoryFiles()
+            ->whereIn('file_type', ['youtube', 'spotify', 'link'])
+            ->count();
+
+        $fileOrder = ($memory->memoryFiles()->whereNotIn('file_type', ['youtube','spotify','link'])->max('order') ?? 0) + 1;
+        $linkOrder = ($memory->memoryFiles()->whereIn('file_type', ['youtube','spotify','link'])->max('order') ?? 99) + 1;
+        if ($linkOrder < 100) $linkOrder = 100;
 
         // Tambah file baru
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $i => $file) {
-                if (!$file || $currentCount >= 5) break;
+                if (!$file || $existingFileCount >= 5) break;
+                if ($file->getSize() > 10 * 1024 * 1024) continue;
+
                 $path     = $file->store('memory/' . auth()->id(), 'public');
                 $fileType = $this->mimeToType($file->getMimeType());
                 MemoryFile::create([
@@ -198,24 +225,24 @@ class MemoryController extends Controller
                     'file_path' => $path,
                     'file_type' => $fileType,
                     'caption'   => $request->input("captions.{$i}") ?: null,
-                    'order'     => $order++,
+                    'order'     => $fileOrder++,
                 ]);
-                $currentCount++;
+                $existingFileCount++;
             }
         }
 
         // Tambah link baru
         foreach ($request->input('links', []) as $i => $link) {
-            if (empty($link) || $currentCount >= 5) continue;
+            if (empty(trim($link)) || $existingLinkCount >= 2) continue;
             $linkType = $this->detectLinkType($link);
             MemoryFile::create([
                 'memory_id' => $memory->id,
                 'file_path' => $link,
                 'file_type' => $linkType,
                 'caption'   => $request->input("link_captions.{$i}") ?: null,
-                'order'     => $order++,
+                'order'     => $linkOrder++,
             ]);
-            $currentCount++;
+            $existingLinkCount++;
         }
 
         return redirect('/home')->with('success', 'Kenangan berhasil diperbarui! 🌟');

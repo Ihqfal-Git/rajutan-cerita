@@ -108,17 +108,29 @@
 const SUGGESTIONS = @json($suggestions);
 let fileCount = 0;
 let linkCount = 0;
-const MAX = 5;
+const MAX_FILES = 5;
+const MAX_LINKS = 2;
 
-function updateCounter() {
+function updateFileCounter() {
     document.getElementById('fileCounter').textContent = fileCount;
-    document.getElementById('addFileBtn').disabled = fileCount >= MAX;
-    document.getElementById('addFileBtn').style.opacity = fileCount >= MAX ? '.4' : '1';
+    const btn = document.getElementById('addFileBtn');
+    btn.disabled = fileCount >= MAX_FILES;
+    btn.style.opacity = fileCount >= MAX_FILES ? '.4' : '1';
+    btn.textContent = fileCount >= MAX_FILES ? '✕ Maksimal 5 file tercapai' : '+ Tambah File';
+}
+
+function updateLinkCounter() {
+    const btn = document.getElementById('addLinkBtn');
+    const counter = document.getElementById('linkCounter');
+    if (counter) counter.textContent = linkCount;
+    btn.disabled = linkCount >= MAX_LINKS;
+    btn.style.opacity = linkCount >= MAX_LINKS ? '.4' : '1';
+    btn.textContent = linkCount >= MAX_LINKS ? '✕ Maksimal 2 link tercapai' : '+ Tambah Link';
 }
 
 function addFileSlot() {
-    if (fileCount >= MAX) return;
-    const idx = fileCount;
+    if (fileCount >= MAX_FILES) return;
+    const idx = Date.now(); // pakai timestamp supaya index unik
     fileCount++;
 
     const slot = document.createElement('div');
@@ -126,72 +138,88 @@ function addFileSlot() {
     slot.id = 'slot_' + idx;
     slot.innerHTML = `
         <div class="slot-header">
-            <span class="slot-num">File ${idx + 1}</span>
-            <button type="button" class="slot-remove" onclick="removeFileSlot(${idx})">✕ Hapus</button>
+            <span class="slot-num">File ${fileCount}</span>
+            <button type="button" class="slot-remove" onclick="removeFileSlot('${idx}')">✕ Hapus</button>
         </div>
-        <input type="file" name="files[${idx}]" accept="image/*,video/*,audio/*" onchange="detectFileType(this, ${idx})">
+        <input type="file" name="files[]" accept="image/*,video/*,audio/*" onchange="detectFileType(this, '${idx}')">
         <div class="file-type-hint" id="hint_${idx}" style="font-size:.72rem;color:#6b7280;margin-top:.3rem"></div>
         <div class="caption-area">
-            <input type="text" name="captions[${idx}]" class="caption-input" placeholder="Tambah keterangan (opsional)..." id="cap_${idx}">
+            <input type="text" name="captions[]" class="caption-input" placeholder="Tambah keterangan (opsional)..." id="cap_${idx}">
             <div class="caption-suggestions">
-                ${SUGGESTIONS.map(s => `<span class="cap-chip" onclick="setCap(${idx}, '${s}')">${s}</span>`).join('')}
+                ${SUGGESTIONS.map(s => `<span class="cap-chip" onclick="document.getElementById('cap_${idx}').value='${s}'">${s}</span>`).join('')}
             </div>
         </div>
     `;
     document.getElementById('uploadSlots').appendChild(slot);
-    updateCounter();
+    updateFileCounter();
 }
 
 function removeFileSlot(idx) {
     const el = document.getElementById('slot_' + idx);
-    if (el) el.remove();
-    fileCount--;
-    updateCounter();
+    if (el) { el.remove(); fileCount--; updateFileCounter(); }
 }
 
 function detectFileType(input, idx) {
     const hint = document.getElementById('hint_' + idx);
     if (!input.files[0]) return;
+
     const mime = input.files[0].type;
-    if (mime.startsWith('image/'))      hint.textContent = '🖼️ Foto terdeteksi';
-    else if (mime.startsWith('video/')) hint.textContent = '🎬 Video terdeteksi';
-    else if (mime.startsWith('audio/')) hint.textContent = '🎵 Musik terdeteksi';
-    else                                hint.textContent = '📎 File terdeteksi';
+    const size = input.files[0].size;
+    const maxSize = 10 * 1024 * 1024;
+
+    if (size > maxSize) {
+        hint.textContent = '⚠️ File terlalu besar! Maksimal 10MB';
+        hint.style.color = '#f87171';
+        input.value = '';
+        return;
+    }
+
+    if (mime.startsWith('image/'))      hint.textContent = '🖼️ Foto — ' + formatSize(size);
+    else if (mime.startsWith('video/')) hint.textContent = '🎬 Video — ' + formatSize(size);
+    else if (mime.startsWith('audio/')) hint.textContent = '🎵 Musik — ' + formatSize(size);
+    else                                hint.textContent = '📎 File — ' + formatSize(size);
     hint.style.color = '#c084fc';
 }
 
-function setCap(idx, text) {
-    document.getElementById('cap_' + idx).value = text;
+function formatSize(bytes) {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
 function addLinkSlot() {
-    const idx = linkCount++;
+    if (linkCount >= MAX_LINKS) return;
+    const idx = Date.now();
+    linkCount++;
+
     const slot = document.createElement('div');
     slot.className = 'link-slot';
     slot.id = 'lslot_' + idx;
     slot.innerHTML = `
         <div class="slot-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-            <span class="slot-num">Link ${idx + 1}</span>
-            <button type="button" class="slot-remove" onclick="removeLinkSlot(${idx})">✕ Hapus</button>
+            <span class="slot-num">Link ${linkCount}</span>
+            <button type="button" class="slot-remove" onclick="removeLinkSlot('${idx}')">✕ Hapus</button>
         </div>
-        <input type="url" name="links[${idx}]" placeholder="https://youtube.com/... atau https://open.spotify.com/..." style="width:100%;background:rgba(15,10,30,.8);border:1px solid rgba(150,100,200,.25);border-radius:10px;color:#e8e0f0;padding:.65rem .9rem;font-size:.88rem;outline:none;font-family:inherit;margin-bottom:.6rem" oninput="detectLink(this, ${idx})">
+        <input type="url" name="links[]" placeholder="https://youtube.com/... atau https://open.spotify.com/..."
+            style="width:100%;background:rgba(15,10,30,.8);border:1px solid rgba(150,100,200,.25);border-radius:10px;color:#e8e0f0;padding:.65rem .9rem;font-size:.88rem;outline:none;font-family:inherit;margin-bottom:.6rem"
+            oninput="detectLink(this, '${idx}')">
         <div id="lhint_${idx}" style="font-size:.72rem;margin-bottom:.5rem"></div>
-        <input type="text" name="link_captions[${idx}]" class="caption-input" placeholder="Keterangan link (opsional)..." id="lcap_${idx}">
+        <input type="text" name="link_captions[]" class="caption-input" placeholder="Keterangan link (opsional)..." id="lcap_${idx}">
         <div class="caption-suggestions" style="margin-top:.5rem">
-            ${SUGGESTIONS.map(s => `<span class="cap-chip" onclick="setLCap(${idx}, '${s}')">${s}</span>`).join('')}
+            ${SUGGESTIONS.map(s => `<span class="cap-chip" onclick="document.getElementById('lcap_${idx}').value='${s}'">${s}</span>`).join('')}
         </div>
     `;
     document.getElementById('linkSlots').appendChild(slot);
+    updateLinkCounter();
 }
 
 function removeLinkSlot(idx) {
     const el = document.getElementById('lslot_' + idx);
-    if (el) el.remove();
+    if (el) { el.remove(); linkCount--; updateLinkCounter(); }
 }
 
 function detectLink(input, idx) {
-    const url = input.value;
-    const hint = document.getElementById('lhint_' + idx);
+    const url   = input.value;
+    const hint  = document.getElementById('lhint_' + idx);
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
         hint.textContent = '▶️ YouTube — akan ditampilkan sebagai video embed';
         hint.style.color = '#f87171';
@@ -206,11 +234,18 @@ function detectLink(input, idx) {
     }
 }
 
-function setLCap(idx, text) {
-    document.getElementById('lcap_' + idx).value = text;
-}
+// Tambahkan counter link di UI
+document.addEventListener('DOMContentLoaded', () => {
+    // Inject counter ke link section
+    const linkSection = document.getElementById('addLinkBtn').parentElement;
+    const counterEl = document.createElement('div');
+    counterEl.className = 'counter-bar';
+    counterEl.style.marginBottom = '1rem';
+    counterEl.innerHTML = `Link: <span class="counter-fill" id="linkCounter">0</span> / 2`;
+    linkSection.insertBefore(counterEl, document.getElementById('linkSlots'));
 
-// Start dengan 1 slot file
-addFileSlot();
+    // Start dengan 1 file slot
+    addFileSlot();
+});
 </script>
 @endsection
