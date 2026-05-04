@@ -11,6 +11,9 @@ use App\Http\Controllers\CommentController;
 Route::get('/', function () {
     return auth()->check() ? redirect('/home') : view('welcome');
 });
+Route::get('/debug-files', function () {
+    return App\Models\MemoryFile::all(['id','file_path','file_type']);
+});
 
 // Public QR routes (no auth needed)
 Route::get('/m/{slug}', [PublicMemoryController::class, 'show'])->name('memory.public');
