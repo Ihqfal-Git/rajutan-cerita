@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class MemoryController extends Controller
 {
@@ -80,37 +81,26 @@ class MemoryController extends Controller
 
         // Simpan file (max 5)
         $fileCount = 0;
-            if ($request->hasFile('files')) {
-                foreach ($request->file('files') as $i => $file) {
-                    if (!$file || $fileCount >= 5) continue;
-                    if ($file->getSize() > 10 * 1024 * 1024) continue;
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $i => $file) {
+                if (!$file || $fileCount >= 5) continue;
+                if ($file->getSize() > 10 * 1024 * 1024) continue;
 
-                    // Upload ke Cloudinary
-                    if (env('CLOUDINARY_URL')) {
-                        $uploaded = cloudinary()->upload($file->getRealPath(), [
-                            'folder'        => 'memory/' . auth()->id(),
-                            'resource_type' => 'auto',
-                        ]);
-                        $path = $uploaded->getSecurePath();
-                    } else {
-                        // Fallback ke local storage
-                        $path = $file->store('memory/' . auth()->id(), 'public');
-                    }
-                    $path     = $uploaded->getSecurePath();
-                    $fileType = $this->mimeToType($file->getMimeType());
+                $path     = $this->uploadFile($file, auth()->id());
+                $fileType = $this->mimeToType($file->getMimeType());
 
-                    MemoryFile::create([
-                        'memory_id' => $memory->id,
-                        'file_path' => $path,
-                        'file_type' => $fileType,
-                        'caption'   => $request->input("captions.{$i}") ?: null,
-                        'order'     => $fileOrder++,
-                    ]);
-                    $fileCount++;
-                }
+                MemoryFile::create([
+                    'memory_id' => $memory->id,
+                    'file_path' => $path,
+                    'file_type' => $fileType,
+                    'caption'   => $request->input("captions.{$i}") ?: null,
+                    'order'     => $fileOrder++,
+                ]);
+                $fileCount++;
             }
+        }
 
-        // Simpan link (max 2, terpisah)
+        // Simpan link (max 2)
         $linkCount = 0;
         foreach ($request->input('links', []) as $i => $link) {
             if (empty(trim($link)) || $linkCount >= 2) continue;
@@ -204,9 +194,6 @@ class MemoryController extends Controller
                     ->where('memory_id', $memory->id)
                     ->first();
                 if ($mf) {
-                    if (!in_array($mf->file_type, ['youtube', 'spotify', 'link'])) {
-                        Storage::disk('public')->delete($mf->file_path);
-                    }
                     $mf->delete();
                 }
             }
@@ -230,18 +217,7 @@ class MemoryController extends Controller
                 if (!$file || $existingFileCount >= 5) break;
                 if ($file->getSize() > 10 * 1024 * 1024) continue;
 
-                // Upload ke Cloudinary
-                if (env('CLOUDINARY_URL')) {
-                    $uploaded = cloudinary()->upload($file->getRealPath(), [
-                        'folder'        => 'memory/' . auth()->id(),
-                        'resource_type' => 'auto',
-                    ]);
-                    $path = $uploaded->getSecurePath();
-                } else {
-                    // Fallback ke local storage
-                    $path = $file->store('memory/' . auth()->id(), 'public');
-                }
-                $path     = $uploaded->getSecurePath();
+                $path     = $this->uploadFile($file, auth()->id());
                 $fileType = $this->mimeToType($file->getMimeType());
 
                 MemoryFile::create([
@@ -279,15 +255,9 @@ class MemoryController extends Controller
             ->with('memoryFiles')
             ->firstOrFail();
 
-        foreach ($memory->memoryFiles as $mf) {
-            if (!in_array($mf->file_type, ['youtube', 'spotify', 'link'])) {
-                // BARU — Cloudinary delete pakai public_id
-                // Karena kita simpan full URL, skip delete dari Cloudinary
-                // cukup hapus dari database saja
-            }
+        if ($memory->qr_path) {
+            Storage::disk('public')->delete($memory->qr_path);
         }
-
-        if ($memory->qr_path) Storage::disk('public')->delete($memory->qr_path);
 
         $memory->delete();
 
@@ -295,6 +265,26 @@ class MemoryController extends Controller
     }
 
     // ---------- helpers ----------
+
+    private function uploadFile($file, $userId): string
+    {
+        // Cek apakah Cloudinary dikonfigurasi
+        if (config('cloudinary.api_key') || env('CLOUDINARY_API_KEY')) {
+            try {
+                $uploaded = Cloudinary::upload($file->getRealPath(), [
+                    'folder'        => 'memory/' . $userId,
+                    'resource_type' => 'auto',
+                ]);
+                return $uploaded->getSecurePath();
+            } catch (\Exception $e) {
+                // Fallback ke local jika Cloudinary gagal
+                return $file->store('memory/' . $userId, 'public');
+            }
+        }
+
+        // Local storage
+        return $file->store('memory/' . $userId, 'public');
+    }
 
     private function mimeToType(string $mime): string
     {
