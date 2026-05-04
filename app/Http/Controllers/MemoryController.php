@@ -278,6 +278,23 @@ class MemoryController extends Controller
             \Log::error('Cloudinary upload failed: ' . $e->getMessage());
             return $file->store('memory/' . $userId, 'public');
         }
+        \Log::info('=== CLOUDINARY UPLOAD START ===');
+        \Log::info('User: ' . $userId);
+        \Log::info('File: ' . $file->getClientOriginalName());
+        \Log::info('Cloud name: ' . config('cloudinary.cloud_name'));
+        \Log::info('API key: ' . config('cloudinary.api_key'));
+
+        try {
+            $uploaded = Cloudinary::upload($file->getRealPath(), [
+                'folder'        => 'memory/' . $userId,
+                'resource_type' => 'auto',
+            ]);
+            \Log::info('SUCCESS: ' . $uploaded->getSecurePath());
+            return $uploaded->getSecurePath();
+        } catch (\Exception $e) {
+            \Log::error('FAILED: ' . $e->getMessage());
+            return $file->store('memory/' . $userId, 'public');
+        }
     }
 
     private function mimeToType(string $mime): string
