@@ -86,10 +86,16 @@ class MemoryController extends Controller
                     if ($file->getSize() > 10 * 1024 * 1024) continue;
 
                     // Upload ke Cloudinary
-                    $uploaded = cloudinary()->upload($file->getRealPath(), [
-                        'folder'        => 'memory/' . auth()->id(),
-                        'resource_type' => 'auto',
-                    ]);
+                    if (env('CLOUDINARY_URL')) {
+                        $uploaded = cloudinary()->upload($file->getRealPath(), [
+                            'folder'        => 'memory/' . auth()->id(),
+                            'resource_type' => 'auto',
+                        ]);
+                        $path = $uploaded->getSecurePath();
+                    } else {
+                        // Fallback ke local storage
+                        $path = $file->store('memory/' . auth()->id(), 'public');
+                    }
                     $path     = $uploaded->getSecurePath();
                     $fileType = $this->mimeToType($file->getMimeType());
 
@@ -225,10 +231,16 @@ class MemoryController extends Controller
                 if ($file->getSize() > 10 * 1024 * 1024) continue;
 
                 // Upload ke Cloudinary
-                $uploaded = cloudinary()->upload($file->getRealPath(), [
-                    'folder'        => 'memory/' . auth()->id(),
-                    'resource_type' => 'auto',
-                ]);
+                if (env('CLOUDINARY_URL')) {
+                    $uploaded = cloudinary()->upload($file->getRealPath(), [
+                        'folder'        => 'memory/' . auth()->id(),
+                        'resource_type' => 'auto',
+                    ]);
+                    $path = $uploaded->getSecurePath();
+                } else {
+                    // Fallback ke local storage
+                    $path = $file->store('memory/' . auth()->id(), 'public');
+                }
                 $path     = $uploaded->getSecurePath();
                 $fileType = $this->mimeToType($file->getMimeType());
 
