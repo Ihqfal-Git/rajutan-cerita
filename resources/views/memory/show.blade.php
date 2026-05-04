@@ -122,17 +122,17 @@
                         @foreach($memory->memoryFiles as $mf)
                         <div class="file-block">
                             @if($mf->file_type === 'image')
-                                <img src="{{ asset('storage/'.$mf->file_path) }}" class="player-image" onclick="openLightbox(this.src)">
+                                <img src="{{ $mf->url }}" class="player-image" onclick="openLightbox(this.src)">
                             @elseif($mf->file_type === 'video')
                                 <video controls class="player-video" preload="metadata">
-                                    <source src="{{ asset('storage/'.$mf->file_path) }}">
+                                    <source src="{{ $mf->url }}">
                                 </video>
                             @elseif($mf->file_type === 'music')
                                 <div class="player-music">
                                     <div class="music-icon">🎵</div>
                                     <div class="music-name">{{ $mf->caption ?: basename($mf->file_path) }}</div>
                                     <audio controls class="music-audio" preload="metadata">
-                                        <source src="{{ asset('storage/'.$mf->file_path) }}">
+                                        <source src="{{ $mf->url }}">
                                     </audio>
                                 </div>
                             @elseif($mf->file_type === 'youtube')

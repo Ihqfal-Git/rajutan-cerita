@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class MemoryFile extends Model
 {
+    public function getUrlAttribute(): string
+{
+    if (str_starts_with($this->file_path, 'http')) {
+        return $this->file_path; // Cloudinary URL
+    }
+    return asset('storage/' . $this->file_path);
+}
     protected $fillable = [
         'memory_id', 'file_path', 'file_type', 'caption', 'order',
     ];

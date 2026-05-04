@@ -80,23 +80,29 @@ class MemoryController extends Controller
 
         // Simpan file (max 5)
         $fileCount = 0;
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $i => $file) {
-                if (!$file || $fileCount >= 5) continue;
-                if ($file->getSize() > 10 * 1024 * 1024) continue;
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $i => $file) {
+                    if (!$file || $fileCount >= 5) continue;
+                    if ($file->getSize() > 10 * 1024 * 1024) continue;
 
-                $path     = $file->store('memory/' . auth()->id(), 'public');
-                $fileType = $this->mimeToType($file->getMimeType());
-                MemoryFile::create([
-                    'memory_id' => $memory->id,
-                    'file_path' => $path,
-                    'file_type' => $fileType,
-                    'caption'   => $request->input("captions.{$i}") ?: null,
-                    'order'     => $fileOrder++,
-                ]);
-                $fileCount++;
+                    // Upload ke Cloudinary
+                    $uploaded = cloudinary()->upload($file->getRealPath(), [
+                        'folder'        => 'memory/' . auth()->id(),
+                        'resource_type' => 'auto',
+                    ]);
+                    $path     = $uploaded->getSecurePath();
+                    $fileType = $this->mimeToType($file->getMimeType());
+
+                    MemoryFile::create([
+                        'memory_id' => $memory->id,
+                        'file_path' => $path,
+                        'file_type' => $fileType,
+                        'caption'   => $request->input("captions.{$i}") ?: null,
+                        'order'     => $fileOrder++,
+                    ]);
+                    $fileCount++;
+                }
             }
-        }
 
         // Simpan link (max 2, terpisah)
         $linkCount = 0;
@@ -218,8 +224,14 @@ class MemoryController extends Controller
                 if (!$file || $existingFileCount >= 5) break;
                 if ($file->getSize() > 10 * 1024 * 1024) continue;
 
-                $path     = $file->store('memory/' . auth()->id(), 'public');
+                // Upload ke Cloudinary
+                $uploaded = cloudinary()->upload($file->getRealPath(), [
+                    'folder'        => 'memory/' . auth()->id(),
+                    'resource_type' => 'auto',
+                ]);
+                $path     = $uploaded->getSecurePath();
                 $fileType = $this->mimeToType($file->getMimeType());
+
                 MemoryFile::create([
                     'memory_id' => $memory->id,
                     'file_path' => $path,
@@ -257,7 +269,9 @@ class MemoryController extends Controller
 
         foreach ($memory->memoryFiles as $mf) {
             if (!in_array($mf->file_type, ['youtube', 'spotify', 'link'])) {
-                Storage::disk('public')->delete($mf->file_path);
+                // BARU — Cloudinary delete pakai public_id
+                // Karena kita simpan full URL, skip delete dari Cloudinary
+                // cukup hapus dari database saja
             }
         }
 

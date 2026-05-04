@@ -72,7 +72,7 @@
                 @foreach($memory->memoryFiles as $mf)
                 <div class="existing-file">
                     @if($mf->file_type === 'image')
-                        <img src="{{ asset('storage/'.$mf->file_path) }}" class="existing-thumb" alt="">
+                        <img src="{{ $mf->url }}" class="existing-thumb" alt="">
                     @elseif($mf->file_type === 'youtube')
                         <div class="existing-type-icon" style="background:rgba(239,68,68,.1)">▶️</div>
                     @elseif($mf->file_type === 'spotify')
