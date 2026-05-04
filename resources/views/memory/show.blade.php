@@ -122,9 +122,10 @@
                         @foreach($memory->memoryFiles as $mf)
                         <div class="file-block">
                             @if($mf->file_type === 'image')
-                                <img src="{{ $mf->url }}" class="player-image" onclick="openLightbox(this.src)">
+                                <img src="{{ $mf->url }}" class="player-image" alt="{{ $mf->caption ?? 'Gambar' }}" onclick="openLightbox(this.src)">
                             @elseif($mf->file_type === 'video')
                                 <video controls class="player-video" preload="metadata">
+                                    <source src="{{ $mf->url }}" type="video/mp4">
                                     <source src="{{ $mf->url }}">
                                 </video>
                             @elseif($mf->file_type === 'music')

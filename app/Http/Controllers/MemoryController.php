@@ -268,22 +268,16 @@ class MemoryController extends Controller
 
     private function uploadFile($file, $userId): string
     {
-        // Cek apakah Cloudinary dikonfigurasi
-        if (config('cloudinary.api_key') || env('CLOUDINARY_API_KEY')) {
-            try {
-                $uploaded = Cloudinary::upload($file->getRealPath(), [
-                    'folder'        => 'memory/' . $userId,
-                    'resource_type' => 'auto',
-                ]);
-                return $uploaded->getSecurePath();
-            } catch (\Exception $e) {
-                // Fallback ke local jika Cloudinary gagal
-                return $file->store('memory/' . $userId, 'public');
-            }
+        try {
+            $uploaded = Cloudinary::upload($file->getRealPath(), [
+                'folder'        => 'memory/' . $userId,
+                'resource_type' => 'auto',
+            ]);
+            return $uploaded->getSecurePath();
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary upload failed: ' . $e->getMessage());
+            return $file->store('memory/' . $userId, 'public');
         }
-
-        // Local storage
-        return $file->store('memory/' . $userId, 'public');
     }
 
     private function mimeToType(string $mime): string
