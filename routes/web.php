@@ -11,8 +11,12 @@ use App\Http\Controllers\CommentController;
 Route::get('/', function () {
     return auth()->check() ? redirect('/home') : view('welcome');
 });
-Route::get('/debug-files', function () {
-    return App\Models\MemoryFile::all(['id','file_path','file_type']);
+// Route::get('/debug-files', function () {
+//     return App\Models\MemoryFile::all(['id','file_path','file_type']);
+// });
+
+Route::get('/debug-cloudinary', function () {
+    return response()->json(config('cloudinary'));
 });
 
 // Public QR routes (no auth needed)
